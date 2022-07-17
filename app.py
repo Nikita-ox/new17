@@ -6,8 +6,14 @@ from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields
 
 app = Flask(__name__)
+api = Api(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+api.app.config['RESTX_JSON'] = {'ensure_ascii': False, 'indent': 4}
+
+movies_ns = api.namespace('movies')
+directors_ns = api.namespace('directors')
+genres_ns = api.namespace('genres')
 db = SQLAlchemy(app)
 
 
@@ -24,16 +30,103 @@ class Movie(db.Model):
     director_id = db.Column(db.Integer, db.ForeignKey("director.id"))
     director = db.relationship("Director")
 
+    def __repr__(self):
+        return self.title
+
+
+class MovieSchema(Schema):
+    id = fields.Int()
+    title = fields.Str()
+    description = fields.Str()
+    trailer = fields.Str()
+    year = fields.Int()
+    rating = fields.Float()
+    genre_id = fields.Int()
+    director_id = fields.Int()
+
+
 class Director(db.Model):
     __tablename__ = 'director'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
 
 
+class DirectorSchema(Schema):
+    id = fields.Int()
+    name = fields.Str()
+
+
 class Genre(db.Model):
     __tablename__ = 'genre'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
+
+
+class GenreSchema(Schema):
+    id = fields.Int()
+    name = fields.Str()
+
+
+db.create_all()
+
+
+@movies_ns.route('/')
+class MovieView(Resource):
+    def get(self):
+        director_id = request.args.get('director_id')
+        genre_id = request.args.get('genre_id')
+
+        movies = Movie.query
+
+        if director_id:
+            movies = movies.filter(Movie.director_id == director_id)
+        if genre_id:
+            movies = movies.filter(Movie.genre_id == genre_id)
+        movies = movies.all()
+        return MovieSchema(many=True).dump(movies), 200
+
+    def post(self):
+        data = request.get_json()
+        new_movie = Movie(**data)
+        db.session.add(new_movie)
+        db.session.commit()
+        db.session.close()
+
+        return '', 201
+
+
+@movies_ns.route('/<int:uid>')
+class MovieView(Resource):
+    def get(self, uid):
+        try:
+            movie = Movie.query.get(uid)
+            return MovieSchema().dump(movie), 200
+        except Exception:
+            return "", 404
+
+
+    def put(self, uid):
+        data = request.get_json()
+        movie = Movie.query.get(uid)
+        movie.id = data['id']
+        movie.title = data['title']
+        movie.description = data['description']
+        movie.year = data['year']
+        movie.rating = data['rating']
+        movie.genre_id = data['genre_id']
+        movie.director_id = data['director_id']
+
+        db.session.add(movie)
+        db.session.commit()
+        db.session.close()
+
+
+    def delete(self, uid):
+        movie = Movie.query.get()
+
+        db.session.delete(movie)
+        db.session.commit()
+        db.session.close()
 
 
 
