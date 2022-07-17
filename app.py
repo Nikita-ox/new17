@@ -95,19 +95,18 @@ class MovieView(Resource):
         return '', 201
 
 
-@movies_ns.route('/<int:uid>')
+@movies_ns.route('/<int:mid>')
 class MovieView(Resource):
-    def get(self, uid):
+    def get(self, mid):
         try:
-            movie = Movie.query.get(uid)
+            movie = Movie.query.get(mid)
             return MovieSchema().dump(movie), 200
         except Exception:
             return "", 404
 
-
-    def put(self, uid):
+    def put(self, mid):
         data = request.get_json()
-        movie = Movie.query.get(uid)
+        movie = Movie.query.get(mid)
         movie.id = data['id']
         movie.title = data['title']
         movie.description = data['description']
@@ -120,14 +119,105 @@ class MovieView(Resource):
         db.session.commit()
         db.session.close()
 
-
-    def delete(self, uid):
-        movie = Movie.query.get()
+    def delete(self, mid):
+        movie = Movie.query.get(mid)
 
         db.session.delete(movie)
         db.session.commit()
         db.session.close()
 
+
+@directors_ns.route('/')
+class DirectorsView(Resource):
+    def get(self):
+        directors = Director.query.all()
+        return DirectorSchema(many=True).dump(directors), 200
+
+    def post(self):
+        data = request.get_json()
+        new_director = Director(**data)
+        db.session.add(new_director)
+        db.session.commit()
+        db.session.close()
+
+        return '', 201
+
+
+@directors_ns.route('/<int:did>')
+class DirectorsView(Resource):
+    def get(self, did):
+        try:
+            director = Director.query.get(did)
+            return DirectorSchema().dump(director), 200
+        except Exception:
+            return "", 404
+
+    def put(self, mid):
+        data = request.get_json()
+        director = Movie.query.get(mid)
+        director.id = data['id']
+        director.name = data['name']
+
+
+        db.session.add(movie)
+        db.session.commit()
+        db.session.close()
+
+
+
+    def delete(self, mid):
+        director = Director.query.get(mid)
+
+        db.session.delete(director)
+        db.session.commit()
+        db.session.close()
+
+
+
+@genres_ns.route('/')
+class DirectorsView(Resource):
+    def get(self):
+        genres = Genre.query.all()
+        return DirectorSchema(many=True).dump(genres), 200
+
+    def post(self):
+        data = request.get_json()
+        new_genres = Genre(**data)
+        db.session.add(new_genres)
+        db.session.commit()
+        db.session.close()
+
+        return '', 201
+
+
+@genres_ns.route('/<int:did>')
+class DirectorsView(Resource):
+    def get(self, did):
+        try:
+            genres = Director.query.get(did)
+            return DirectorSchema().dump(genres), 200
+        except Exception:
+            return "", 404
+
+    def put(self, mid):
+        data = request.get_json()
+        genres = Genre.query.get(mid)
+        genres.id = data['id']
+        genres.name = data['name']
+
+
+        db.session.add(genres)
+        db.session.commit()
+        db.session.close()
+
+
+
+    def delete(self, mid):
+        genres = Genre.query.get(mid)
+
+        db.session.delete(genres)
+        db.session.commit()
+        db.session.close()
 
 
 if __name__ == '__main__':
